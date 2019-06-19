@@ -7,11 +7,16 @@ import groovy.xml.*
 import org.gradle.api.*
 import org.gradle.api.publish.*
 import org.gradle.api.publish.maven.*
+import java.io.DataInputStream
+import java.util.*
 
 fun Project.configurePublishing() {
     // Publishing
-    val publishUser = (rootProject.findProperty("BINTRAY_USER") ?: project.findProperty("bintrayUser") ?: System.getenv("BINTRAY_USER"))?.toString()
-    val publishPassword = (rootProject.findProperty("BINTRAY_KEY") ?: project.findProperty("bintrayApiKey") ?: System.getenv("BINTRAY_API_KEY"))?.toString()
+    val properties = Properties()
+    properties.load(DataInputStream(project.rootProject.file("local.properties").inputStream()))
+
+    val publishUser = properties.getProperty("bintrayUser") ?: (rootProject.findProperty("BINTRAY_USER") ?: project.findProperty("bintrayUser") ?: System.getenv("BINTRAY_USER"))?.toString()
+    val publishPassword = properties.getProperty("bintrayApiKey") ?:(rootProject.findProperty("BINTRAY_KEY") ?: project.findProperty("bintrayApiKey") ?: System.getenv("BINTRAY_API_KEY"))?.toString()
 
     plugins.apply("maven-publish")
 
@@ -24,7 +29,7 @@ fun Project.configurePublishing() {
                         it.username = publishUser
                         it.setPassword(publishPassword)
                     }
-                    it.url = uri("https://api.bintray.com/maven/soywiz/soywiz/${project.property("project.package")}/")
+                    it.url = uri("https://api.bintray.com/maven/luca992/kotlin/${project.property("project.package")}/")
                 }
             }
             afterEvaluate {
