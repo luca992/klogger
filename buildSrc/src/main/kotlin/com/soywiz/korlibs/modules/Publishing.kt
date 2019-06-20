@@ -7,16 +7,11 @@ import groovy.xml.*
 import org.gradle.api.*
 import org.gradle.api.publish.*
 import org.gradle.api.publish.maven.*
-import java.io.DataInputStream
-import java.util.*
 
 fun Project.configurePublishing() {
     // Publishing
-    val properties = Properties()
-    properties.load(DataInputStream(project.rootProject.file("local.properties").inputStream()))
-
-    val publishUser = properties.getProperty("bintrayUser") ?: (rootProject.findProperty("BINTRAY_USER") ?: project.findProperty("bintrayUser") ?: System.getenv("BINTRAY_USER"))?.toString()
-    val publishPassword = properties.getProperty("bintrayApiKey") ?:(rootProject.findProperty("BINTRAY_KEY") ?: project.findProperty("bintrayApiKey") ?: System.getenv("BINTRAY_API_KEY"))?.toString()
+    val publishUser = (rootProject.findProperty("BINTRAY_USER") ?: project.findProperty("bintrayUser") ?: System.getenv("BINTRAY_USER"))?.toString()
+    val publishPassword = (rootProject.findProperty("BINTRAY_KEY") ?: project.findProperty("bintrayApiKey") ?: System.getenv("BINTRAY_API_KEY"))?.toString()
 
     plugins.apply("maven-publish")
 
@@ -24,19 +19,22 @@ fun Project.configurePublishing() {
         val publishing = extensions.getByType(PublishingExtension::class.java)
         publishing.apply {
             repositories {
-                it.maven {
-                    it.credentials {
-                        it.username = publishUser
-                        it.setPassword(publishPassword)
+                it.maven { mvnRepo->
+                    mvnRepo.credentials { credentials ->
+                        credentials.username = publishUser
+                        credentials.password = publishPassword
                     }
-                    it.url = uri("https://api.bintray.com/maven/luca992/kotlin/${project.property("project.package")}/")
+                    mvnRepo.url = uri("https://api.bintray.com/maven/luca992/kotlin/${project.property("project.package")}/")
                 }
             }
             afterEvaluate {
                 configure(publications) {
                     val publication = it as MavenPublication
-                    publication.pom.withXml {
-                        it.asNode().apply {
+                    publication.pom.withXml {xmlProvider->
+                        xmlProvider.asNode().apply {
+                            println(project.name)
+                            println(project.property("project.description"))
+                            println(project.property("project.scm.url"))
                             appendNode("name", project.name)
                             appendNode("description", project.property("project.description"))
                             appendNode("url", project.property("project.scm.url"))
